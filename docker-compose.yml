@@ -1,0 +1,45 @@
+version: "3"
+
+services:
+  elasticsearch-container: 
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.2.0
+    container_name: elasticsearch-container 
+    hostname: elasticsearch-container
+    environment:
+      - node.name=es01
+      - cluster.name=docker-cluster
+      - cluster.initial_master_nodes=node-1
+      - bootstrap.memory_lock=true
+      - cluster.initial_master_nodes=es01
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata01:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 10s
+      timeout: 5s
+      retries: 5  
+  hello-world-spring-boot-container:
+    build:
+      context: ./demo
+      dockerfile: Dockerfile
+    volumes:
+      - /data/hello-world-spring-boot
+    links: 
+      - elasticsearch-container
+    # depends_on: 
+    #   - elasticsearch-container
+    # environment:
+    #   WAIT_HOSTS: elasticsearch-container:9200
+    ports:
+      - "8081:8888"
+    restart: on-failure   
+volumes:
+  esdata01:
+    driver: local
